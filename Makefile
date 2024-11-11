@@ -3,23 +3,21 @@ BACKEND=fastapi  # fastapi, symfony
 
 $(APP)-setup:
 	echo Configuring $APP
-	echo Installing frontend/Angular packages
+	echo Installing frontend/Angular Javascript packages
 	cd frontend/angular && npm install && cd ../..
-	echo Creating backend/FastAPI virtual environment
+	echo Installing backend/FastAPI Python packages
 	cd backend/fastapi && ./setup.sh && cd ../..
+	echo Installing backend/Symfony PHP packages
+	cd backend/symfony && composer install && cd ../..
 
-$(APP)-build:
-	echo Building $APP
-	cd frontend/angular && npm build && cd ../..
-	echo Copying frontend distribution to backend/SPA
-	cp -fR frontend/angular/dist/frontend/browser/* backend/fastapi/pyfoods/spa/
+$(APP)-docker:
+	echo Building FastAPI Docker image for $APP
+	docker build . -f FastAPI-Dockerfile -t techtest-fastapi
 
-$(APP)-tests:
-	echo Testing $APP
-
-$(APP)-image:
-	echo Building Docker image $APP
+$(APP)-symfony-docker:
+	echo Building Symfony Docker image for $APP
+	docker build . -f Symfony-Dockerfile -t techtest-fastapi
 
 $(APP)-start:
-	echo Starting $APP
-	cd backend/fastapi && . venv/bin/activate && python3 -m prisma db push && HOST="0.0.0.0" PORT=8000 python3 -m pyfoods
+	echo Starting $APP on http://127.0.0.1:8000
+	docker run -p 8000:80 techtest-fastapi
