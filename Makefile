@@ -16,7 +16,7 @@ $(APP)-docker:
 
 $(APP)-symfony-docker:
 	echo Building Symfony Docker image for $APP
-	docker build . -f Symfony-Dockerfile -t techtest-fastapi
+	docker build . -f Symfony-Dockerfile -t techtest-symfony
 
 $(APP)-start:
 	echo Starting $APP on http://127.0.0.1:8000
