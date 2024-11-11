@@ -1,0 +1,15 @@
+// schema.prisma
+generator client {
+  provider = "prisma-client-py"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Reservation {
+  id        Int      @id @default(autoincrement())
+  date      DateTime
+  foodtruck String
+}

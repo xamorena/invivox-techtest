@@ -1,0 +1,76 @@
+FROM node:22 as frontend-builder
+ARG CDIR
+
+WORKDIR /frontend
+ADD ${CDIR}/frontend/angular/*.json /frontend/
+ADD ${CDIR}/frontend/angular/*.md /frontend/
+RUN npm install -g @angular/cli
+RUN npm install
+ADD ${CDIR}/frontend/angular/public /frontend/public
+ADD ${CDIR}/frontend/angular/src /frontend/src
+RUN npm run build
+
+
+FROM python:3.12-slim as backend-builder
+ARG CDIR
+
+RUN apt update \
+    && apt install -y curl php8.2-fpm php8.2-mbstring php8.2-xml php8.2-dom  php8.2-intl \
+    && apt clean \
+    && rm -rf /var/lib/apt/lists /var/cache/apt
+
+RUN php -v \
+    && php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');" \
+    && php -r "if (hash_file('sha384', 'composer-setup.php') === 'dac665fdc30fdd8ec78b38b9800061b4150413ff2e3b6f88543c636f7cd84f6db9189d43a81e5503cda447da73c7e5b6') { echo 'Installer verified'; } else { echo 'Installer corrupt'; unlink('composer-setup.php'); } echo PHP_EOL;" \
+    && php composer-setup.php \
+    && php -r "unlink('composer-setup.php');" \
+    && mv composer.phar /usr/local/bin/composer
+
+RUN curl -sS https://get.symfony.com/cli/installer | bash \
+    && mv /root/.symfony5/bin/symfony /usr/local/bin/symfony \
+    && /usr/local/bin/symfony check:requirements
+
+RUN symfony check:requirements
+
+WORKDIR /backend
+ADD ${CDIR}/backend/symfony/.env /backend/
+ADD ${CDIR}/backend/symfony/*.json /backend/
+ADD ${CDIR}/backend/symfony/*.lock /backend/
+ADD ${CDIR}/backend/symfony/*.yaml /backend/
+ADD ${CDIR}/backend/symfony/bin /backend/bin
+ADD ${CDIR}/backend/symfony/migrations /backend/migrations
+ADD ${CDIR}/backend/symfony/public /backend/public
+ADD ${CDIR}/backend/symfony/config /backend/config
+ADD ${CDIR}/backend/symfony/templates /backend/templates
+ADD ${CDIR}/backend/symfony/var /backend/var
+ADD ${CDIR}/backend/symfony/vendor /backend/vendor
+ADD ${CDIR}/backend/symfony/src /backend/src
+
+RUN /usr/local/bin/composer install
+
+
+FROM python:3.12-slim
+LABEL org.opencontainers.image.authors="xavier.amorena@gmail.com"
+
+ARG CDIR=.
+ARG S6_OVERLAY_VERSION=3.2.0.2
+
+RUN apt update \
+    && apt install -y curl nginx xz-utils \
+    && apt clean \
+    && rm -rf /var/lib/apt/lists /var/cache/apt
+
+ADD https://github.com/just-containers/s6-overlay/releases/download/v${S6_OVERLAY_VERSION}/s6-overlay-noarch.tar.xz /tmp
+RUN tar -C / -Jxpf /tmp/s6-overlay-noarch.tar.xz
+ADD https://github.com/just-containers/s6-overlay/releases/download/v${S6_OVERLAY_VERSION}/s6-overlay-x86_64.tar.xz /tmp
+RUN tar -C / -Jxpf /tmp/s6-overlay-x86_64.tar.xz
+
+ADD docker/common/root /
+ADD docker/symfony/root /
+
+WORKDIR /opt
+
+COPY --from=frontend-builder /frontend/dist/frontend/browser /opt/frontend/
+COPY --from=backend-builder /backend /opt/backend/
+
+ENTRYPOINT ["/init"]

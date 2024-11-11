@@ -1,0 +1,97 @@
+<style>
+</style>
+
+<main class="main">
+  <h3>Interface de gestion des reservations d'emplacement de FoodTruck</h3>
+  @if (showNewForm) {
+  <div>
+    <h3>Nouvelle Reservation</h3>
+    <form class="app-form">
+      <mat-form-field class="app-form-row">
+        <mat-label>Date</mat-label>
+        <input matInput placeholder="Date" id="newDate" type="date" [(ngModel)]="reservation.date" name="date">
+      </mat-form-field>
+      <mat-form-field class="app-form-row">
+        <mat-label>Foodtruck</mat-label>
+        <input matInput placeholder="Foodtruck" id="newName" type="text" [(ngModel)]="reservation.foodtruck"
+               name="foodtruck">
+      </mat-form-field>
+      <div>
+        <button mat-button color="accent" (click)="cancelReservation()">Annuler</button>
+        <button mat-button color="primary" (click)="submitReservation()">Enregistrer</button>
+      </div>
+    </form>
+  </div>
+  }
+  @else {
+  <div>
+    <button mat-button color="primary" (click)="newReservation()">Ajouter une nouvelle Reservation</button>
+    <button mat-button color="primary" (click)="getReservations()">Recharger les reservations</button>
+  </div>
+  }
+  <div class="calendar">
+    <h3>Calendier des reservations</h3>
+    <div class="calendar-buttons">
+      <button mat-button color="primary" (click)="setPrevWeek()">&lt;&nbsp;Prec.&nbsp;</button>
+      <span>Semaine actuelle <strong>{{ currentWeek }} / {{ currentDate.getFullYear() }}</strong></span>
+      <button mat-button color="primary" (click)="setNextWeek()">&nbsp;Suivant&nbsp;&gt;</button>
+    </div>
+    <table class="calendar-table">
+      <tbody>
+      <tr>
+        @for (weekday of getCurrentWeekdays(); track weekday) {
+          <td>{{ weekday }}</td>
+        }
+      </tr>
+      @for (item of reservations; track item) {
+        @if (currentWeek === getWeek(item.date)) {
+          <tr>
+          @for (weekday of weekdays; track weekday) {
+            @if (item.date && item.date.getDay() === weekday) {
+              <td class="calendar-entry">{{ item.foodtruck }}</td>
+            }
+            @else {
+              <td class="calendar-entry">&nbsp;</td>
+            }
+          }
+          </tr>
+        }
+      }
+      </tbody>
+    </table>
+  </div>
+  <div class="content">
+    <h3>Listing des reservations</h3>
+    <table>
+      <thead>
+      <tr>
+        <td>ID</td>
+        <td>NAME</td>
+        <td>DATE</td>
+      </tr>
+      </thead>
+      <tbody>
+      @for (item of reservations; track item) {
+        <tr>
+          <td>{{ item.id }}<td>
+          <td>{{ item.foodtruck }}<td>
+          <td>{{ item.date.toString() }}</td>
+          <td>
+            <button mat-button color="primary" (click)="removeReservation(item.id)">Supprimer</button>
+          </td>
+        </tr>
+        }
+      @empty {
+        <tr>
+          <td>No reservation found</td>
+        </tr>
+      }
+    </table>
+  </div>
+  <router-outlet/>
+</main>
+
+<footer class="footer">
+  <a href="{{ getApiUrl() }}/doc" target="_blank">Reservation API</a>
+</footer>
+

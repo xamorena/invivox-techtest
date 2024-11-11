@@ -1,0 +1,67 @@
+FROM node:22 as frontend-builder
+ARG CDIR
+
+WORKDIR /frontend
+ADD ${CDIR}/frontend/angular/*.json /frontend/
+ADD ${CDIR}/frontend/angular/*.md /frontend/
+RUN npm install -g @angular/cli
+RUN npm install
+ADD ${CDIR}/frontend/angular/public /frontend/public
+ADD ${CDIR}/frontend/angular/src /frontend/src
+RUN npm run build
+
+
+FROM python:3.12-slim as backend-builder
+ARG CDIR
+
+RUN apt update \
+    && apt install -y python3-venv \
+    && apt clean \
+    && rm -rf /var/lib/apt/lists /var/cache/apt
+
+WORKDIR /backend
+ADD ${CDIR}/backend/fastapi/data/*.yaml /backend/data/
+ADD ${CDIR}/backend/fastapi/requirements.txt /backend/requirements.txt
+RUN python3 -m venv venv \
+    && . venv/bin/activate \
+    && python3 -m pip install --upgrade pip \
+    && python3 -m pip install -r requirements.txt
+ADD ${CDIR}/backend/fastapi/migrations /backend/migrations
+ADD ${CDIR}/backend/fastapi/pyfoods /backend/pyfoods
+ADD ${CDIR}/backend/fastapi/.env /backend/.env
+ADD ${CDIR}/backend/fastapi/schema.prisma /backend/schema.prisma
+
+
+FROM python:3.12-slim
+LABEL org.opencontainers.image.authors="xavier.amorena@gmail.com"
+
+ARG CDIR=.
+ARG S6_OVERLAY_VERSION=3.2.0.2
+
+RUN apt update \
+    && apt install -y curl nginx xz-utils \
+    && apt clean \
+    && rm -rf /var/lib/apt/lists /var/cache/apt
+
+ADD https://github.com/just-containers/s6-overlay/releases/download/v${S6_OVERLAY_VERSION}/s6-overlay-noarch.tar.xz /tmp
+RUN tar -C / -Jxpf /tmp/s6-overlay-noarch.tar.xz
+ADD https://github.com/just-containers/s6-overlay/releases/download/v${S6_OVERLAY_VERSION}/s6-overlay-x86_64.tar.xz /tmp
+RUN tar -C / -Jxpf /tmp/s6-overlay-x86_64.tar.xz
+
+ADD docker/common/root /
+ADD docker/fastapi/root /
+
+WORKDIR /opt
+
+COPY --from=frontend-builder /frontend/dist/frontend/browser /opt/frontend/
+COPY --from=backend-builder /backend /opt/backend/
+
+RUN cd /opt/backend \
+    && . venv/bin/activate \
+    && python3 -m pip install -r requirements.txt \
+    && python3 -m prisma generate \
+    && python3 -m prisma db push
+
+EXPOSE 80
+
+ENTRYPOINT ["/init"]

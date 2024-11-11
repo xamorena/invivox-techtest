@@ -1,0 +1,55 @@
+.main {
+  display: flex;
+  flex-direction: column;
+  padding: 10px;
+  margin: 10px;
+}
+
+.footer {
+  display: flex;
+  flex-direction: row;
+  padding: 10px;
+  margin: 10px;
+}
+
+.app-form {
+  padding: 10px;
+  margin: 10px;
+  width: 100%;
+}
+
+.app-form-row {
+  width: 80%;
+}
+
+.calendar {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.calendar-buttons {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  width: 100%;
+}
+
+table.calendar-table {
+  display: table;
+  width: 100%;
+}
+
+.calendar-entry {
+  width: 12%;
+  min-width: 12%;
+  max-width: 12%;
+  border: 1px solid black;
+  text-align: center;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}

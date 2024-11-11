@@ -1,0 +1,3 @@
+#!/usr/bin/with-contenv bash
+cd /opt/backend
+exec symfony server:start
