@@ -24,18 +24,16 @@ class ReservationService
   public function createReservation(ReservationDTO $reservationDTO): Reservation
   {
       $repository = $this->entityManager->getRepository(Reservation::class);
-      # Création de la réservation
-      $reservation = new Reservation();
 
       $foodtruck = $reservationDTO->foodtruck;
-      $time = $reservationDTO->date;
+      $time = new \DateTime($reservationDTO->date);
 
       # Normalisation
       $foodtruck = strtoupper(trim($foodtruck));
-      $date = date_create($time);
-      $date1 = date_create($time);
+      $date = $time;
+      $date1 = new \DateTime($reservationDTO->date);
       $date1->modify('monday this week');
-      $date2 = date_create($time);
+      $date2 = new \DateTime($reservationDTO->date);
       $date2->modify('sunday this week');
 
       $existingReservations = $repository->findByNameAndPeriod(
@@ -56,9 +54,10 @@ class ReservationService
       if (count($dailyReservations) >= $maxSpots) {
         throw new ReservationException('Nombre maximum d\'emplacements déjà réservés pour ce jour.', 400);
       }
-
+      # Création de la réservation
+      $reservation = new Reservation();
       $reservation->setFoodtruck($reservationDTO->foodtruck);
-      $reservation->setDate(new \DateTime($$reservationDTO->date()));
+      $reservation->setDate(new \DateTime($reservationDTO->date));
       $this->entityManager->persist($reservation);
       $this->entityManager->flush();
       return $reservation;
