@@ -52,10 +52,7 @@ class ReservationController extends AbstractController
     ): JsonResponse {
         try {
             $reservation = $this->reservationService->createReservation($reservationDTO);
-            return new JsonResponse(
-                $this->json($reservation),
-                Response::HTTP_CREATED
-            );
+            return $this->json($reservation);
         } catch (ReservationException $e) {
             return new JsonResponse($e->getMessage(), Response::HTTP_BAD_REQUEST);
         }
@@ -68,9 +65,9 @@ class ReservationController extends AbstractController
         try {
             $reservations = $this->reservationService->selectAllReservations();
             if (!$reservations) {
-                return new JsonResponse([]);
+                return $this->json([]);
             }
-            return new JsonResponse($this->json($reservations));
+            return $this->json($reservations);
         } catch(ReservationException $e) {
             return new JsonResponse($e->getMessage(), Response::HTTP_BAD_REQUEST);
         } 
@@ -82,7 +79,7 @@ class ReservationController extends AbstractController
     {
         try {
             $reservation = $this->reservationService->deleteReservation($id);
-            return new JsonResponse($this->json($reservation));
+            return $this->json($reservation);
         } catch(ReservationException $e) {
             return new JsonResponse($e->getMessage(), Response::HTTP_BAD_REQUEST);
         }
@@ -95,7 +92,7 @@ class ReservationController extends AbstractController
         try {
             $time = new \DateTime($date);
             $reservations = $this->reservationService->selectReservationsByDate($time);
-            return new JsonResponse($this->json($reservations));
+            return $this->json($reservations);
         } catch(\Exception $e) {
             return new JsonResponse($e->getMessage(), Response::HTTP_BAD_REQUEST);
         }
