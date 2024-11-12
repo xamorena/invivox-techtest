@@ -17,32 +17,29 @@ class ReservationRepository extends ServiceEntityRepository
         parent::__construct($registry, Reservation::class);
     }
 
-    public function findByNameAndPeriod($name, $date1, $date2): array
+    public function findReservationsByNameAndPeriod($name, $date1, $date2): array
     {
-        $entityManager = $this->getEntityManager();
-        $query = $entityManager->createQuery(
-            'SELECT r
-            FROM App\Entity\Reservation r
-            WHERE ( r.date BETWEEN :date1 AND :date2 ) AND ( r.foodtruck = :name )'
-        )
+        return $this->createQueryBuilder('r')
+        ->where('r.foodtruck = :name')
+        ->andWhere('r.date BETWEEN :date1 AND :date2')
         ->setParameter('name', $name)
         ->setParameter('date1', $date1)
-        ->setParameter('date2', $date2);
-        return $query->getResult();
+        ->setParameter('date2', $date2)
+        ->getQuery()
+        ->getResult();
     }
 
 
-    public function countByDate($date): array
+    public function findReservationsByDate($date): array
     {
-        $entityManager = $this->getEntityManager();
-        $query = $entityManager->createQuery(
-            'SELECT COUNT(r.id)
-            FROM App\Entity\Reservation r
-            WHERE r.date BETWEEN :date1 AND :date2'
-        )
-        ->setParameter('date1', $date->format('Y-m-d 00:00:00'))
-        ->setParameter('date2', $date->format('Y-m-d 23:59:59'));
-        return $query->getResult();
+        $date1 = (clone $date)->modify('00:00:00');
+        $date2 = (clone $date)->modify('23:59:59');
+        return $this->createQueryBuilder('r')
+        ->where('r.date BETWEEN :date1 AND :date2')
+        ->setParameter('date1', $date1)
+        ->setParameter('date2', $date2)
+        ->getQuery()
+        ->getResult();
     }
 
 

@@ -26,17 +26,14 @@ class ReservationService
       $repository = $this->entityManager->getRepository(Reservation::class);
 
       $foodtruck = $reservationDTO->foodtruck;
-      $time = new \DateTime($reservationDTO->date);
+      $date = new \DateTime($reservationDTO->date);
 
       # Normalisation
       $foodtruck = strtoupper(trim($foodtruck));
-      $date = $time;
-      $date1 = new \DateTime($reservationDTO->date);
-      $date1->modify('monday this week');
-      $date2 = new \DateTime($reservationDTO->date);
-      $date2->modify('sunday this week');
+      $date1 = (clone $date)->modify('monday this week');
+      $date2 = (clone $date)->modify('sunday this week');
 
-      $existingReservations = $repository->findByNameAndPeriod(
+      $existingReservations = $repository->findReservationsByNameAndPeriod(
         $foodtruck, 
         $date1->format('Y-m-d'), 
         $date2->format('Y-m-d')
@@ -49,7 +46,7 @@ class ReservationService
       $dayOfWeek = $date->format('N');
       $maxSpots = $dayOfWeek == 5 ? 7 : 8;
 
-      $dailyReservations = $repository->countByDate($date);
+      $dailyReservations = $repository->findReservationsByDate($date->format('Y-m-d'));
 
       if (count($dailyReservations) >= $maxSpots) {
         throw new ReservationException('Nombre maximum d\'emplacements déjà réservés pour ce jour.', 400);
@@ -70,7 +67,7 @@ class ReservationService
 
   public function selectReservationsByDate(\DateTime $date): array
   {
-    return $this->entityManager->getRepository(Reservation::class)->findBy(['date' => $date]);
+    return $this->entityManager->getRepository(Reservation::class)->findReservationsByDate($date);
   }
 
   public function selectOneReservation(int $id): Reservation

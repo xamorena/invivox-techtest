@@ -90,8 +90,8 @@ class ReservationController extends AbstractController
     public function getReservationsByDate(string $date): JsonResponse
     {
         try {
-            $time = new \DateTime($date);
-            $reservations = $this->reservationService->selectReservationsByDate($time);
+            $date = new \DateTime($date);
+            $reservations = $this->reservationService->selectReservationsByDate($date);
             return $this->json($reservations);
         } catch(\Exception $e) {
             return new JsonResponse($e->getMessage(), Response::HTTP_BAD_REQUEST);
